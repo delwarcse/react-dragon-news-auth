@@ -1,33 +1,51 @@
-import { useContext } from "react";
-import { Link } from "react-router-dom";
+import { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../provider/AuthProvider";
 
 const Register = () => {
-    const { createNewUser,setUser } = useContext(AuthContext);
-
-
+    const { createNewUser, setUser, updateUSerProfile } = useContext(AuthContext);
+    const [error, setError] = useState({});
+    const navigate = useNavigate();
+    // const location = useLocation();
+    // console.log(location);
     const handleSubmit = (e) => {
         e.preventDefault();
         const form = new FormData(e.target);
         const name = form.get("Name")
+        if (name.length < 5) {
+            setError({ ...error, name: "Name Must Be More then 5 Character" })
+            return;
+        }
         const photo = form.get("PhotoUrl")
         const email = form.get("Email")
         const pass = form.get("Password")
-        console.log({ name, photo, email, pass });
+        if (pass.length < 5) {
+            setError({ ...error, pass: "Password Must Be More then 5 Character" })
+            return;
+        }
+        // console.log({ name, photo, email, pass });
 
         createNewUser(email, pass)
             .then((result) => {
                 const user = result.user;
-                setUser(user)
-                console.log(user);
+                setUser(user);
+                updateUSerProfile({ displayName: name, photoURL: photo })
+                    .then(() => {
+                        //navigate(location?.state ? location.state : "/");
+                        navigate("/");
+                    })
+                    .catch((err) => {
+                        alert(err);
+                    })
+
             })
             .catch((error) => {
                 const errorCode = error.code;
                 const errorMessage = error.message;
-                console.log(errorCode, errorMessage);
+                alert(errorCode, errorMessage);
             });
     }
-    
+
     return (
         <div className="hero min-h-screen flex justify-center items-center">
             <div className="hero-content flex-col">
@@ -37,12 +55,16 @@ const Register = () => {
                         <fieldset className="fieldset">
                             <label className="label">Name</label>
                             <input type="text" name="Name" className="input input-bordered" placeholder="Name" />
+                            {
+                                error.name && (<label className="label text-xs text-rose-500">{error.name}</label>)
+                            }
                             <label className="label">Photo URL</label>
                             <input type="text" name="PhotoUrl" className="input input-bordered" placeholder="Photo-URL" />
                             <label className="label">Email</label>
                             <input type="email" name="Email" className="input input-bordered" placeholder="Email" />
                             <label className="label">Password</label>
                             <input type="password" name="Password" className="input input-bordered" placeholder="Type a Password" />
+                            {error.pass && (<label className="label text-xs text-rose-500">{error.pass}</label>)}
                             <button className="btn w-full btn-primary rounded-none mt-4">Register</button>
                         </fieldset>
                     </form>
